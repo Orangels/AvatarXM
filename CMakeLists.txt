@@ -18,6 +18,8 @@ include_directories(
         ${OpenCV_INCLUDE_DIRS}
         ${onnxruntime_INCLUDE_DIRS}
         ${TORCH_INCLUDE_DIRS}
+        /usr/local/include
+        include
 )
 
 add_executable(avatarXM
@@ -28,5 +30,8 @@ add_executable(avatarXM
 target_link_libraries(avatarXM PRIVATE
         ${OpenCV_LIBS}
         "${onnxruntime_INSTALL_PREFIX}/lib/libonnxruntime.so"
+        "${onnxruntime_INSTALL_PREFIX}/lib/libonnxruntime_providers_cuda.so"
+        "${onnxruntime_INSTALL_PREFIX}/lib/libonnxruntime_providers_shared.so"
         "${TORCH_LIBRARIES}"
+        yaml-cpp
 )

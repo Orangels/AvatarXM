@@ -61,7 +61,8 @@ node_modules/
 *.caffemodel
 *.prototxt
 *.tensorcache
-*build
+*build*
+*UnitTests
 imgs/*
 *.jpg
 *npz
