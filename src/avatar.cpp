@@ -1,7 +1,8 @@
 #include "avatar.h"
 
-Avatar::Avatar(){
 
+Avatar::Avatar(){
+    mAvatarHandler = new avatarHandler();
 }
 
 void Avatar::run(){
@@ -10,17 +11,17 @@ void Avatar::run(){
 }
 
 void Avatar::ProduceImage(int mode){
-
-};
+    cout << "ProduceImage" << endl;
+}
 
 void Avatar::ConsumeImage(int mode){
-
-};
+    cout << "ConsumeImage" << endl;
+}
 
 void Avatar::ConsumeRTMPImage(int mode){
-
-};
+    cout << "ConsumeRTMPImage" << endl;
+}
 
 void Avatar::RPCServer(){
-
-};
+    cout << "RPCServer" << endl;
+}

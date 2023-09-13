@@ -73,3 +73,5 @@ UnitTest/fisheye/IVE_SDK_2.3.12.1_Linux/
 *npy
 *log
 *.clion.*
+*c_file*
+*debug*

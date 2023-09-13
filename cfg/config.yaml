@@ -1,0 +1,41 @@
+fps: 25
+q_nums: 32
+mel_step_size: 5
+fs: 16000
+channels: 1
+sound_threshold: 2500
+silence_num_threshold: 32
+stream_batch_size: 24
+stream_batch_added_size: 6
+face_id_file: doc/guiji_stand_4.pkl
+face_vid_path: doc/guiji_stand_4_bg.mp4
+resize_factor: 1
+rotate: False
+openai_api_key: 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
+tts_subscription: 2ffb4b8bea894ee3af59694441a11e55
+tts_region: japaneast
+messages_list_conut: 20
+
+lip:
+  crop: [0, -1, 0, -1]
+  box: [-1, -1, -1, -1]
+  checkpoint_path: doc/checkpoint_step000290000_256_v2.pth
+  img_size: 256
+  face_det_batch_size: 16
+  pads: [0, 20, 0, 0] # Padding (top, bottom, left, right). Please adjust to include chin at least
+  nosmooth: False
+  static: False
+  wav2lip_batch_size: 128
+
+wenet:
+  config_path: config/wenet.yaml
+  dict_path: doc/words.txt
+  encoder_onnx_path: doc/we_encoder.onnx
+  gpu: 1
+  mode: attention_rescoring
+
+parsing:
+  n_classes: 19
+  checkpoint_path: doc/79999_iter.pth
+
+

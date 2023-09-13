@@ -12,6 +12,7 @@
 
 #include "utils/singleton.h"
 #include "utils/config_yaml.h"
+#include "task/avatarHandler.h"
 
 using namespace std;
 
@@ -47,5 +48,8 @@ private:
     mutex              vConMutexCam_0, vConMutexCam_1, vConMutexCam_2, vConMutexCam_3;
     mutex              vConMutexRTMP_0, vConMutexRTMP_1, vConMutexRTMP_2, vConMutexRTMP_3;
     mutex              vRtmpMutex_0, vRtmpMutex_1, vRtmpMutex_2, vRtmpMutex_3;
+
+    avatarHandler* mAvatarHandler;
+
 };
 #endif
