@@ -24,11 +24,14 @@ include_directories(
         /home/suimang/ls-dev/env/libtorch/include/torch/csrc/api/include
         /usr/local/include
         include
+        /home/suimang/ls-dev/env/kaldi-master/src
+        /home/suimang/ls-dev/env/kaldi-master/tools/openfst/include
 )
 
 add_executable(avatarXM
         UnitTests/RunAvatar.cpp
-#        tools/main.cpp
+#        UnitTests/torch_gaussianBlur_test.cpp
+        #        tools/main.cpp
 #        ${sources}
 #        src/task/avatarHandler.cpp
 #        include/utils/utils.h
@@ -36,6 +39,8 @@ add_executable(avatarXM
 #        include/avatar.h
 )
 
+file(GLOB KALDI_LIB "/home/suimang/ls-dev/env/kaldi-master/src/lib/*.so")
+target_link_options(avatarXM PRIVATE -L/opt/intel/oneapi/mkl/2022.0.2/lib/intel64)
 target_link_libraries(avatarXM PRIVATE
 #        ${OpenCV_LIBS}
         ${SYS_USR_LIB}/libopencv_core.so
@@ -50,4 +55,11 @@ target_link_libraries(avatarXM PRIVATE
         "${onnxruntime_INSTALL_PREFIX}/lib/libonnxruntime_providers_shared.so"
         "${TORCH_LIBRARIES}"
         yaml-cpp
+
+        #kaldi
+#        /opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_intel_ilp64.so
+#        /opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_core.so
+#        /opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_intel_thread.so
+        ${KALDI_LIB}
+
 )
