@@ -30,7 +30,8 @@ include_directories(
 
 add_executable(avatarXM
         UnitTests/RunAvatar.cpp
-#        UnitTests/torch_gaussianBlur_test.cpp
+#        UnitTests/torch_mat_test.cpp
+        #        UnitTests/torch_gaussianBlur_test.cpp
         #        tools/main.cpp
 #        ${sources}
 #        src/task/avatarHandler.cpp

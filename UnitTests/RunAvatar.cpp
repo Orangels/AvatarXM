@@ -1,4 +1,6 @@
 #include <iostream>
+#include <chrono>
+
 #include <onnxruntime_cxx_api.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -13,18 +15,27 @@
 #include "util/common-utils.h"
 #include "matrix/kaldi-vector.h"
 //#include <ATen/core/List.h>
+#include <ATen/core/function_schema.h>
 
 #ifdef _WIN32
 #else
 #include <locale>
 #include <codecvt>
 #endif
-#define AUDIO_PATH "/home/suimang/ls-dev/Demo/test_audio/bd.wav"
+#define AUDIO_PATH "/home/suimang/ls-dev/Demo/test_audio/test.wav"
 typedef void(* AudioFeatureCallback)(int rows, int cols, int stride, float* feats);
 
 using namespace cv;
 using namespace std;
 using namespace torch::indexing;
+
+int getTimestamp(){
+    auto now = std::chrono::system_clock::now();
+    // 将时间戳转换为毫秒
+    auto timestamp = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+
+    return timestamp.time_since_epoch().count();
+}
 
 bool infer_libtorch() {
     torch::DeviceType device_type;
@@ -428,6 +439,8 @@ bool infer_wenet() {
     torch::Tensor out1 = outputs->elements()[0].toTensor();
     torch::Tensor out2 = outputs->elements()[1].toTensor();
 
+
+    cout << out1[1][1][50][50] <<endl;
     std::cout << "pre infer." << std::endl;
 
 
@@ -677,6 +690,36 @@ void test_cv_vid() {
     //释放
 }
 
+torch::Tensor matToTensor(const cv::Mat& image) {
+    cv::Mat imageRGB;
+    cv::cvtColor(image, imageRGB, cv::COLOR_BGR2RGB);
+    torch::Tensor tensor = torch::from_blob(imageRGB.data, {1, imageRGB.rows, imageRGB.cols, 3}, torch::kByte);
+    tensor = tensor.permute({0, 3, 1, 2});
+    tensor = tensor.to(torch::kFloat32).div_(255);
+    return tensor;
+}
+
+// 将tensor转换为Mat对象
+cv::Mat tensorToMat(const torch::Tensor& tensor) {
+//    int start = getTimestamp();
+    torch::Tensor tensorRGB = tensor.permute({0, 2, 3, 1});
+//    int end = getTimestamp();
+//    cout << "tensor to mat tensor copy cost : " << end - start << endl;
+    tensorRGB = tensorRGB.mul_(255).clamp_(0, 255).to(torch::kUInt8);
+    cv::Mat image(tensorRGB.size(1), tensorRGB.size(2), CV_8UC3, tensorRGB.data_ptr());
+    cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+
+    return image;
+}
+
+c10::IValue runModelForward(torch::jit::Module model, std::vector<c10::IValue> inputs){
+    {
+        torch::NoGradGuard noGradGuard; // 创建一个禁止梯度计算的作用域
+        auto output = model.forward(inputs); // 在该作用域内运行模型的前向传播
+        return output;
+    }
+}
+
 bool wav2lip(int rows, int cols, int stride, float* feats) {
     // 创建InferSession, 查询支持硬件设备
     // GPU Mode, 0 - gpu device id
@@ -815,32 +858,56 @@ bool wav2lip(int rows, int cols, int stride, float* feats) {
         for (int k = 0; k < sp[2]; k++) {
             pdata_index = j * 512 + k;
             encoder_512.push_back(pdata[pdata_index]);
+//            cout << pdata[pdata_index] << " ";
         }
+//        cout << endl;
         out_n_512.push_back(encoder_512);
     }
 
     vector<vector<vector<float>>> out_mel;
-
-
+    torch::Tensor mel_tensor = torch::zeros({ (long)out_n_512.size() - 4, 5, 512 }, torch::kFloat32).contiguous();
+    int tensor_gen_start = getTimestamp();
+    cout << "tensor copy start " << endl;
     for (int m = 0; m < out_n_512.size() - 4;m++) {
         std::vector<vector<float>> out_5_512(out_n_512.begin() + m, out_n_512.begin() + m +5);
-        out_mel.push_back(out_5_512);
+        out_mel.push_back(out_5_512); // 58 5 512
+        for (int i = 0; i < out_5_512.size(); ++i) {
+            const float* src_ptr = out_5_512[i].data();
+            float* dst_ptr = mel_tensor[m][i].data_ptr<float>();
+            std::memcpy(dst_ptr, src_ptr, sizeof(float) * 512);
+        }
     }
 
     int mel_length = out_mel.size();
-//    torch::Tensor mel_tensor = torch::from_blob(out_mel.data(), { mel_length,1, 5, 512 });
-    cout << "tensor copy start " << endl;
-    clock_t tensor_gen_start = clock();
-    torch::Tensor mel_tensor = torch::empty({ mel_length, 1, 5, 512 });
-
-    float* data_ptr = mel_tensor.data_ptr<float>();
-    std::memcpy(data_ptr, out_mel.data(), out_mel.size() * sizeof(std::vector<std::vector<float>>));
-
-    clock_t tensor_gen_end = clock();
+//    torch::Tensor mel_tensor = torch::from_blob(out_mel.data(), { mel_length, 5, 512 }).clone();
+//    cout << "tensor copy start " << endl;
+//    clock_t tensor_gen_start = clock();
+    int channels = out_mel[0].size();
+    int length = out_mel[0][0].size();
+    cout << "out_mel size : " <<mel_length << " " << channels << " " << length << endl;
+//    torch::Tensor mel_tensor = torch::zeros({ mel_length, channels, length }, torch::kFloat32).contiguous();
+////
+//    float* data_ptr = mel_tensor.data_ptr<float>();
+//    std::memcpy(data_ptr, out_mel.data(), out_mel.size() * sizeof(std::vector<std::vector<float>>));
+    mel_tensor.unsqueeze_(1);
+//
+//    for (int i = 0; i < out_mel.size(); i++) {
+//	    for (int j = 0; j < out_mel[i].size(); j++) {
+//		    for (int k = 0; k < out_mel[i][j].size(); k++) {
+//			    mel_tensor[i][0][j][k] = out_mel[i][j][k];
+//		    }
+//	    }
+//    }
+//    auto opts = torch::TensorOptions().dtype(torch::kFloat32);
+//    torch::Tensor mel_tensor = torch::from_blob(out_mel.data(), {mel_length,1, 5, 512}, opts).clone();
+    int tensor_gen_end = getTimestamp();
     cout << "tensor copy end " << endl;
     cout << "tenso copy cost : " << tensor_gen_end - tensor_gen_start << endl;
     cout << mel_tensor.sizes() << endl;
     cout << mel_tensor.dim() << endl;
+    cout << out_mel[0][0][0] << endl;
+    cout << "*************" << endl;
+    cout << mel_tensor[0][0][0][0].item<float>() << endl;
     torch::Tensor mel_tensor_cuda = mel_tensor.to(torch::kCUDA);
 
     cv::FileStorage fs2("../c_file/template/2023-04-21_22-06-37_24422621726989746_changed_head_fusion_vid.yml", cv::FileStorage::READ);
@@ -863,8 +930,8 @@ bool wav2lip(int rows, int cols, int stride, float* feats) {
     vector<Mat> faces_batch;
     cv::Mat frame;
     cout << "mel_length " << mel_length << endl;
-//    torch::Tensor frames_3_tensor = torch::zeros({ mel_length, 256, 256, 3 }, torch::kFloat32);
-    torch::Tensor frames_3_tensor = torch::empty({ mel_length, 256, 256,3 }, torch::kByte);
+    torch::Tensor frames_3_tensor = torch::zeros({ mel_length, 256, 256, 3 }, torch::kFloat32);
+//    torch::Tensor frames_3_tensor = torch::empty({ mel_length, 256, 256,3 }, torch::kByte);
     for (int n = 0; n < out_mel.size(); n++) {
         capture >> frame;
         frames_batch.push_back(frame);
@@ -878,13 +945,45 @@ bool wav2lip(int rows, int cols, int stride, float* feats) {
         //cv::Rect rect(x1, y1, x2 - x1, y2 - y1);
         cv::Mat frame_face(frame, cv::Rect(x1, y1, x2 - x1, y2 - y1));
         cv::resize(frame_face, frame_face, cv::Size(256, 256));
+        //TODO bgr2rgb
+        cv::cvtColor(frame_face, frame_face, cv::COLOR_BGR2RGB);
         //frame_face.convertTo(frame_face, CV_32FC3, 1.0 / 255.0);
 
-//        faces_batch.push_back(frame_face);
-        std::memcpy(frames_3_tensor[n].data_ptr(), frame_face.data, frame_face.total() * frame_face.elemSize());
+        faces_batch.push_back(frame_face);
+//        std::memcpy(frames_3_tensor[n].data_ptr(), frame_face.data, frame_face.total() * frame_face.elemSize());
+//        frames_3_tensor[n] = torch::from_blob(frame_face.data, { frame_face.rows, frame_face.cols, 3}, torch::kByte).clone();
+        frames_3_tensor[n] = torch::from_blob(frame_face.data, { frame_face.rows, frame_face.cols, 3}, torch::kByte);
+        if (n==10){
+            cout << frames_3_tensor[n][128][128] << endl;
+        }
     }
     frames_3_tensor = frames_3_tensor.to(torch::kFloat32).div_(255).to(torch::kCUDA);
+
     cout << "frames_3_tensor done" << endl;
+
+//    torch::Tensor frames_3_tensor_mat = frames_3_tensor.to(torch::kCPU)[10] * 255.;
+//    std::cout << frames_3_tensor_mat.size(0) << " " << frames_3_tensor_mat.size(1) << " " << frames_3_tensor_mat.size(2) << endl;
+//
+//    cv::Mat frames_3_mat(frames_3_tensor_mat.size(0), frames_3_tensor_mat.size(1), CV_32FC1, frames_3_tensor_mat.data_ptr<float>());
+
+//    cv::Vec3b pixel = frames_3_mat.at<cv::Vec3b>(128, 128);
+//    std::cout << "像素值  ";
+//    std::cout << "B=" << static_cast<int>(pixel[0]) << " ";
+//    std::cout << "G=" << static_cast<int>(pixel[1]) << " ";
+//    std::cout << "R=" << static_cast<int>(pixel[2]) << std::endl;
+
+    cout << frames_3_tensor[10][128][128]*255 << endl;
+
+    cv::Vec3b pixel_ori = faces_batch[10].at<cv::Vec3b>(10, 10);
+    std::cout << "像素值  ";
+    std::cout << "B=" << static_cast<int>(pixel_ori[0]) << " ";
+    std::cout << "G=" << static_cast<int>(pixel_ori[1]) << " ";
+    std::cout << "R=" << static_cast<int>(pixel_ori[2]) << std::endl;
+
+//    cv::imwrite("frames_3_tensor_mat.jpg", tensorToMat(frames_3_tensor[0].unsqueeze_(0).permute({0, 3, 1, 2}).to(torch::kCPU)));
+
+
+
     //torch::Tensor frames_3_tensor_u8 = torch::from_blob(faces_batch.data(), ((int)out_mel.size(), 256, 256, 3), torch::dtype(torch::kFloat32));
     //auto ffff_c = frames_3_tensor_u8.clone();
 
@@ -901,6 +1000,7 @@ bool wav2lip(int rows, int cols, int stride, float* feats) {
     //torch::Tensor frames_3_tensor_mask_cuda = frames_3_tensor_mask.to(torch::kCUDA);
 
     frames_3_tensor_mask.index_put_({Slice(), Slice(128), Slice(), Slice() }, 0);
+//    cv::imwrite("frames_3_tensor_mask_mat.jpg", tensorToMat(frames_3_tensor_mask[0].unsqueeze_(0).permute({0, 3, 1, 2}).to(torch::kCPU)));
     torch::Tensor frames_6_tensor_cuda = torch::cat({ frames_3_tensor, frames_3_tensor_mask }, 3).permute({0, 3, 1, 2}).to(torch::kCUDA);
 
     std::string model_pb = "../c_file/checkpoints/wav2lip_c_cuda.pt";
@@ -910,17 +1010,54 @@ bool wav2lip(int rows, int cols, int stride, float* feats) {
 
 
     // ls change
-//    std::vector<torch::jit::IValue> inputs;
-//    auto inputs = c10::impl::GenericList(c10::StringType::get());
-//    inputs.push_back(mel_tensor_cuda);
-//    inputs.push_back(frames_6_tensor_cuda);
+    std::vector<torch::jit::IValue> inputs;
+    inputs.push_back(mel_tensor_cuda);
+    inputs.push_back(frames_6_tensor_cuda);
 
 //    auto outputs = module.forward({ inputs }).toTuple();
-    auto outputs = module.forward({ mel_tensor_cuda, frames_6_tensor_cuda }).toTuple();
+
+
+//    auto outputs = module.forward({ mel_tensor_cuda, frames_6_tensor_cuda }).toTuple();
+    auto outputs = runModelForward(module, {mel_tensor_cuda, frames_6_tensor_cuda}).toTuple();
+//    auto outputs = runModelForward(module, {inputs}).toTuple();
     torch::Tensor out1 = outputs->elements()[0].toTensor();
     torch::Tensor out2 = outputs->elements()[1].toTensor();
 
+    size_t numElements = outputs->elements().size();
+    std::cout << "Number of elements in tuple: " << numElements << std::endl;
+
+
     std::cout << "pre infer." << std::endl;
+
+    std::cout << out1.sizes() << endl;
+    std::cout << out2.sizes() << endl;
+    cout << out1[1][1][50][50] << endl;
+
+
+    cv::imwrite("w2l_result_2.jpg", tensorToMat(out2[10].unsqueeze_(0).to(torch::kCPU)));
+    torch::Tensor out1_result = out1[10].to(torch::kCPU);
+
+
+
+    torch::Tensor tensorRGB = out1_result.permute({1, 2, 0});
+    cout << tensorRGB[10][10] << endl;
+    cout << "***********" << endl;
+    tensorRGB = tensorRGB.mul_(255).clamp_(0, 255).to(torch::kUInt8);
+    cout << tensorRGB[10][10] << endl;
+
+    cv::Mat image(tensorRGB.size(0), tensorRGB.size(1), CV_8UC3, tensorRGB.data_ptr());
+    cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+    cv::imwrite("w2l_result_1.jpg", image);
+//    Mat mat_1 = tensorToMat(out1_result);
+//    torch::Tensor out2_result = out2.to(torch::kCPU).permute({0, 2, 3, 1})[10] * 255.;
+//    std::cout << out1_result.size(0) << " " << out1_result.size(1) << " " << out1_result.size(2) << endl;
+//
+//
+//    cv::Mat mat_1(out1_result.size(0), out1_result.size(1), CV_32FC1, out1_result.data_ptr<float>());
+//    cv::Mat mat_2(out2_result.size(0), out2_result.size(1), CV_32FC1, out2_result.data_ptr<float>());
+//
+//    cv::imwrite("w2l_result_1.jpg", mat_1);
+//    cv::imwrite("w2l_result_2.jpg", mat_2);
 
 
     session_options.release();
@@ -1076,7 +1213,15 @@ void audioCallback(int rows, int cols, int stride, float* feats) {
 //    cout << "stride : " << stride << endl;
 //    cout << "feats add: " << feats << endl;
 //    cout << "***** extra audio feature *****" << endl;
-    wav2lip(rows, cols, stride, feats);
+    wav2lip(rows/3, cols, stride, feats);
+//    wav2lip(62*4, cols, stride, feats);
+//    wav2lip(62, cols, stride, feats);
+//    for (int i = 0; i < 4; ++i) {
+//        for (int j = 0; j < 20; ++j) {
+//            cout << *(feats + i*20 + j) << " " ;
+//        }
+//        cout << endl;
+//    }
 }
 
 int main()
