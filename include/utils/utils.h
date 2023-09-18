@@ -12,6 +12,7 @@
 using namespace std;
 
 namespace avatarUtiles{
+
     inline std::vector<std::string> readClassNames(string label)
     {
         std::string labels_txt_file = label;
@@ -33,6 +34,8 @@ namespace avatarUtiles{
         fp.close();
         return classNames;
     }
+
+
 }
 
 #endif //AVATARXM_UTILS_H

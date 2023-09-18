@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 project(avatarXM)
 
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g2 -Wall")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O2")
+
 set(onnxruntime_INSTALL_PREFIX /usr/local)
 set(onnxruntime_INCLUDE_DIRS
         ${onnxruntime_INSTALL_PREFIX}/include/onnxruntime
@@ -29,15 +32,19 @@ include_directories(
 )
 
 add_executable(avatarXM
-        UnitTests/RunAvatar.cpp
-#        UnitTests/torch_mat_test.cpp
+#        UnitTests/RunAvatar.cpp
+        include/utils/extraAudioFeature.h
+        src/utils/extraAudioFeature.cpp
+        #        UnitTests/torch_mat_test.cpp
         #        UnitTests/torch_gaussianBlur_test.cpp
-        #        tools/main.cpp
-#        ${sources}
-#        src/task/avatarHandler.cpp
-#        include/utils/utils.h
-#        include/structures/structs.h
-#        include/avatar.h
+                tools/main.cpp
+
+        ${sources}
+        src/task/avatarHandler.cpp
+        include/utils/utils.h
+        include/structures/structs.h
+        include/task/avatarHandler.h
+        include/avatar.h
 )
 
 file(GLOB KALDI_LIB "/home/suimang/ls-dev/env/kaldi-master/src/lib/*.so")

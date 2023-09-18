@@ -1,0 +1,14 @@
+WENET:
+  MODULE_PATH: "../c_file/checkpoints/encoder.onnx"
+WAV2LIP:
+  MODULE_PATH: "../c_file/checkpoints/wav2lip_c_cuda.pt"
+PROGRAME:
+  FACE_BBOX_PATH: [
+    "../c_file/template/2023-04-21_22-06-37_24422621726989746_changed_head_fusion_vid.yml"
+  ]
+  FACE_VID_PATH: [
+    "../c_file/template/2023-04-21_22-06-37_24422621726989746_changed_head_fusion_vid.yml"
+  ]
+TEST:
+  DEBUG: True
+  OUTPUT_FILE: "../result_file/debug/"

@@ -10,31 +10,40 @@
 #include <torch/script.h>
 #include <onnxruntime_cxx_api.h>
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include "utils/singleton.h"
 #include "utils/config_yaml.h"
 
-class avatarHandler{
+class avatarHandler {
 public:
     avatarHandler();
-    ~avatarHandler()=default;
-    bool infer_libtorch();
-    bool infer_wenet();
-    bool infer_yolov8();
+
+    ~avatarHandler();
+
+    bool run(int rows, int cols, int stride, float *feats);
 
 private:
 
+    bool preInfer();
+
 //    std::string wav2lip_model_pb;
     //libTorch
-    torch::jit::Module * wav2lip_model;
-    torch::jit::Module * parsing_model;
+    torch::jit::Module wav2lip_model;
+    torch::jit::Module parsing_model;
+
+    cv::FileStorage fs2;
+    cv::VideoCapture capture;
+
     //onnxruntime
-    Ort::Session * session_wenet;
-    Ort::Session * session_yolo;
+    Ort::Session *mSession_wenet;
+
+    Ort::SessionOptions mSession_options;
+    Ort::Env *mEnv;
 
 
-
-
-    yamlConfig *config_A = Singleton<yamlConfig>::GetInstance("../cfg/config.yaml");
+    yamlConfig *config_A = Singleton<yamlConfig>::GetInstance("../cfg/avatarXM.yaml");
 };
 
 #endif //AVATARXM_AVATARHANDLER_H

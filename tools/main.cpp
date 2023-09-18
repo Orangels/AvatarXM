@@ -8,7 +8,7 @@ int main(void)
 
 
     Avatar avatar;
-    avatar.run();
+    avatar.run("/home/suimang/ls-dev/Demo/test_audio/test.wav");
 //    cout<<("Avatar start\n")<<endl;
 //    CConfiger* pConfiger = CConfiger::getOrCreateConfiger("../cfg/configer.txt");
 //    Dispatch dispatch;
