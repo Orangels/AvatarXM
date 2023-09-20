@@ -2,11 +2,12 @@
 #include "utils/extraAudioFeature.h"
 #include <functional>
 
-void avatarExtraAudioFeature(int rows, int cols, int stride, float *feats, Avatar *avatar) {
-    avatar->audioCallback(rows, cols, stride, feats);
-}
-
 namespace {
+
+    void avatarExtraAudioFeature(int rows, int cols, int stride, float *feats, Avatar *avatar) {
+        avatar->audioCallback(rows, cols, stride, feats);
+    }
+
     std::function<void(int, int, int, float *)> callBackTmp;
 
     void wrapperextraAudioFeature_File(int rows, int cols, int stride, float *feats) {

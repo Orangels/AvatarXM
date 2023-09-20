@@ -35,8 +35,6 @@ add_executable(avatarXM
 #        UnitTests/RunAvatar.cpp
         include/utils/extraAudioFeature.h
         src/utils/extraAudioFeature.cpp
-        #        UnitTests/torch_mat_test.cpp
-        #        UnitTests/torch_gaussianBlur_test.cpp
                 tools/main.cpp
 
         ${sources}

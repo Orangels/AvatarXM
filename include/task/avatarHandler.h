@@ -6,6 +6,7 @@
 #define AVATARXM_AVATARHANDLER_H
 
 #include <iostream>
+
 #include <torch/torch.h>
 #include <torch/script.h>
 #include <onnxruntime_cxx_api.h>
@@ -30,18 +31,18 @@ private:
 
 //    std::string wav2lip_model_pb;
     //libTorch
-    torch::jit::Module wav2lip_model;
-    torch::jit::Module parsing_model;
+    torch::jit::Module mWav2lip_model;
+    torch::jit::Module mParsing_model;
 
     cv::FileStorage fs2;
-    cv::VideoCapture capture;
+    cv::VideoCapture mCapture;
+    cv::VideoWriter mWriter;
 
     //onnxruntime
     Ort::Session *mSession_wenet;
 
     Ort::SessionOptions mSession_options;
     Ort::Env *mEnv;
-
 
     yamlConfig *config_A = Singleton<yamlConfig>::GetInstance("../cfg/avatarXM.yaml");
 };
