@@ -24,10 +24,12 @@ public:
     ~avatarHandler();
 
     bool run(int rows, int cols, int stride, float *feats);
+    void getWavToLipImgs(int rows, int cols, int stride, float *feats);
 
 private:
 
     bool preInfer();
+    std::vector<int64_t> onnxinference(int rows, int cols, int stride, float *feats, float* pdata);
 
 //    std::string wav2lip_model_pb;
     //libTorch
