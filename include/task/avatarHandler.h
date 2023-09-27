@@ -24,12 +24,20 @@ public:
     ~avatarHandler();
 
     bool run(int rows, int cols, int stride, float *feats);
-    void getWavToLipImgs(int rows, int cols, int stride, float *feats);
+    vector<cv::Mat> getWavToLipImgs(int rows, int cols, int stride, float *feats);
+    int getSelectedTemplate() {
+        return mSelectedTemplate;
+    }
+
+    void setSelectedTemplate(int num){
+        mSelectedTemplate = num;
+    }
 
 private:
 
     bool preInfer();
-    std::vector<int64_t> onnxinference(int rows, int cols, int stride, float *feats, float* pdata);
+    std::vector<int64_t> onnxinference(int rows, int cols, int stride, float *feats, float** pdata);
+    void wavToLip(float* pdata);
 
 //    std::string wav2lip_model_pb;
     //libTorch
@@ -47,6 +55,8 @@ private:
     Ort::Env *mEnv;
 
     yamlConfig *config_A = Singleton<yamlConfig>::GetInstance("../cfg/avatarXM.yaml");
+
+    int mSelectedTemplate = 0;
 };
 
 #endif //AVATARXM_AVATARHANDLER_H

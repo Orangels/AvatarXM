@@ -14,6 +14,7 @@
 #include "utils/config_yaml.h"
 #include "task/avatarHandler.h"
 #include "utils/utils.h"
+#include "task/wavToLipHandler.h"
 
 using namespace std;
 
@@ -21,7 +22,7 @@ class Avatar {
 public:
     Avatar();
 
-    ~Avatar() = default;
+    ~Avatar();
 
     void run(const char *audioPath);
 
@@ -55,6 +56,7 @@ private:
     mutex vRtmpMutex_0, vRtmpMutex_1, vRtmpMutex_2, vRtmpMutex_3;
 
     avatarHandler *mAvatarHandler;
+    wavToLip* mWavToLipHandler;
 
     int audioFeatRows, audioFeatCols, audioFeatStride;
     float *audioFeats;

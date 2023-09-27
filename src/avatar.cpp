@@ -31,15 +31,33 @@ Avatar::Avatar() {
                             std::placeholders::_4, this);
 
     mAvatarHandler = new avatarHandler();
+    mWavToLipHandler = new wavToLip();
+}
+
+Avatar::~Avatar(){
+    delete mAvatarHandler;
+    delete mWavToLipHandler;
 }
 
 void Avatar::run(const char *audioPath) {
 
     extraAudioFeature_File(wrapperextraAudioFeature_File, audioPath);
-        mAvatarHandler->run(audioFeatRows, audioFeatCols, audioFeatStride,
-        audioFeats);
-    //mAvatarHandler->getWavToLipImgs(audioFeatRows, audioFeatCols, audioFeatStride,
-                                    audioFeats);
+    //    mAvatarHandler->run(audioFeatRows, audioFeatCols, audioFeatStride,
+    //                        audioFeats);
+    vector<cv::Mat> result;
+//    result = mAvatarHandler->getWavToLipImgs(audioFeatRows, audioFeatCols, audioFeatStride,
+//                                             audioFeats);
+    result = mWavToLipHandler->getWavToLipImgs(audioFeatRows, audioFeatCols, audioFeatStride,
+                                             audioFeats);
+    cv::VideoWriter w1;
+    w1.open("../result/test_result.mp4", cv::VideoWriter::fourcc('D', 'I', 'V', 'X'), 25, cv::Size(1080, 1920),
+            true);
+    int i = 0;
+    for (cv::Mat frame : result){
+        w1 << frame;
+        cv::imwrite("../result/imgs/" + to_string(i++) + ".jpg", frame);
+    }
+    w1.release();
 
     delete[] audioFeats;
 }

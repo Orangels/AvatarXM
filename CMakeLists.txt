@@ -33,17 +33,19 @@ include_directories(
 
 add_executable(avatarXM
 #        UnitTests/RunAvatar.cpp
-        UnitTests/torch_mat_test.cpp
-#        include/utils/extraAudioFeature.h
-#        src/utils/extraAudioFeature.cpp
-#        tools/main.cpp
+#        UnitTests/torch_mat_test.cpp
+        include/utils/extraAudioFeature.h
+        src/utils/extraAudioFeature.cpp
+        tools/main.cpp
 #
-#        ${sources}
-#        src/task/avatarHandler.cpp
-#        include/utils/utils.h
-#        include/structures/structs.h
-#        include/task/avatarHandler.h
-#        include/avatar.h
+        ${sources}
+        src/task/avatarHandler.cpp
+        include/utils/utils.h
+        include/structures/structs.h
+        include/task/avatarHandler.h
+        include/avatar.h
+        include/task/wavToLipHandler.h
+        src/task/wavToLipHandler.cpp
 )
 
 file(GLOB KALDI_LIB "/home/suimang/ls-dev/env/kaldi-master/src/lib/*.so")
